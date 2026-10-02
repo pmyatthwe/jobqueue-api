@@ -44,10 +44,8 @@ def process_image_resize(self, job_id):
         image_url = job.payload["image_url"]
         width = job.payload.get("width", 800)
 
-        # Simulated work — in a real version this would download the image,
-        # resize it with Pillow, and upload the result somewhere (S3/Blob).
-        time.sleep(2)
-        if "fail" in image_url:  # lets us deliberately trigger a failure for testing
+        time.sleep(2) # for development
+        if "fail" in image_url: 
             raise ValueError(f"Could not fetch image from {image_url}")
 
         result = {"resized_url": f"{image_url}?w={width}", "width": width}
@@ -56,9 +54,7 @@ def process_image_resize(self, job_id):
 
     except Exception as exc:
         job.refresh_from_db()
-        # Only mark permanently Failed once retries are exhausted — while
-        # retries remain, Celery's autoretry will re-run this task, so we
-        # don't want to prematurely mark it Failed on attempt 1 of 3.
+  
         if self.request.retries >= self.max_retries:
             _mark_failed(job_id, str(exc))
             logger.error("Image resize job %s failed permanently: %s", job_id, exc)
@@ -86,7 +82,7 @@ def process_report_generation(self, job_id):
 
     try:
         report_type = job.payload.get("report_type", "summary")
-        time.sleep(3)  # simulated report-building work
+        time.sleep(3) # for development
 
         result = {"report_type": report_type, "rows": 42, "generated_at": str(timezone.now())}
         _mark_success(job_id, result)
